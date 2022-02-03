@@ -1,4 +1,3 @@
-require('dotenv').config();
 const mysql = require('mysql');
 var db_config = {
     connectionLimit: 10,

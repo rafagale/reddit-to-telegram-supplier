@@ -30,7 +30,7 @@ async function fetchPosts(options) {
       //TODO: Title, media download flow
       let text = `${post.title} (${post.score} karma) https://redd.it/${post.id} ${post.url}`;
       await sleep(5000).then(() => {
-        tgBot.telegram.sendMessage(tgChannel, text).then(console.log(text)).then(() => {
+        tgBot.telegram.sendMessage(tgChannel, text).then(() => {
           console.log("Sent to telegram");
         });
       });
