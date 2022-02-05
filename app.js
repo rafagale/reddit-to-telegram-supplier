@@ -81,7 +81,7 @@ function checkDb(postId) {
       });
   });
 }
-//old method; eloy HIJOPUTA;
+
 function downloadMedia(postUrl) {
   if (post.is_video) {
     log.info("[video]" + postInfo);
