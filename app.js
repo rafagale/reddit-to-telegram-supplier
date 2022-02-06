@@ -5,10 +5,8 @@ const CronJob = require('cron').CronJob;
 const snoowrap = require('snoowrap');
 const { Telegraf } = require('telegraf');
 const urlParser = require('url');
-//TODO: no rula todavia
-//const { Client } = require('@rmp135/imgur');
-//let imgur = new Client('43652b743b5a7a0')
-//imgur.setClientId(process.env.IMGUR_CLIENT_ID);
+const { Client } = require('@rmp135/imgur');
+const imgur = new Client(process.env.IMGUR_CLIENT_ID);
 const request = require("request-promise");
 const tgBot = new Telegraf(process.env.TG_BOT_TOKEN);
 const tgChannel = process.env.TG_CHANNEL;
@@ -45,7 +43,7 @@ async function fetchPosts(options) {
             tgBot.telegram.sendPhoto(tgChannel, url);
           }
           if ("image/gif" === urlContent) {
-            tgBot.telegram.sendAnimation(tgChannel, url);
+            sendToTelegram(tgChannel, url);
           }
         }).catch((e) => {
           logger.error("error getting post.link headers", e);
@@ -65,8 +63,7 @@ async function fetchPosts(options) {
         }
 
         if ('imgur.com' === urlParser.parse(url).host) {
-          //TODO: Arreglar esto
-          /*let pathParts = urlParser.parse(url).path.split('/');
+          let pathParts = urlParser.parse(url).path.split('/');
           if (pathParts.length === 2) {
             let imgurId = pathParts[1].split('.')[0];
             imgur.getInfo(imgurId).then((media) => {
@@ -76,13 +73,14 @@ async function fetchPosts(options) {
             }).catch((e) => {
               logger.error("imgur error", e);
             });
-          }*/
+          }
         } else if (urlParser.parse(url).host === 'gfycat.com') {
           let rname = url.match(/gfycat.com\/(?:detail\/)?(\w*)/)[1];
           request.get("https://api.gfycat.com/v1/gfycats/" + rname).on('response', (res) => {
             var body = '';
             res.on('data', (chunk) => { body += chunk; });
             res.on('end', () => {
+              logger.info("gfycat");
               body = JSON.parse(body);
               tgBot.telegram.sendAnimation(tgChannel, url);
             });
@@ -119,4 +117,13 @@ function main() {
 
 const sleep = ms => {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+
+function sendToTelegram(tgChannel, url) {
+  try{
+    tgBot.telegram.sendAnimation(tgChannel, url);
+  } catch (e) {
+    logger.error("Error sending meme", e)
+  }
 }
