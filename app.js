@@ -3,7 +3,13 @@ const db = require('./db-conn');
 const logger = require('simple-node-logger').createSimpleLogger('purple.log');
 const CronJob = require('cron').CronJob;
 const snoowrap = require('snoowrap');
-const { Telegraf } = require('telegraf')
+const { Telegraf } = require('telegraf');
+const urlParser = require('url');
+//TODO: no rula todavia
+//const { Client } = require('@rmp135/imgur');
+//let imgur = new Client('43652b743b5a7a0')
+//imgur.setClientId(process.env.IMGUR_CLIENT_ID);
+const request = require("request-promise");
 const tgBot = new Telegraf(process.env.TG_BOT_TOKEN);
 const tgChannel = process.env.TG_CHANNEL;
 const totalChannels = process.env.TOTAL_CHANNELS;
@@ -29,20 +35,69 @@ async function fetchPosts(options) {
     await sleep(5000).then(() => {
       if (post.score > minScore) {
         let postId = post.subreddit_id + post.id;
-        //Check the postId in db to check if it's already sent
-        //TODO: Title, media download flow
         let title = `${post.title} (${post.score} karma)`;
         logger.info(title);
-        downloadMedia(post.url);
+        let url = post.url;
+        //TODO: Comprobar el id en bbdd y refactorizar esta lógica
+        request.get(url).on('response', (res) => {
+          let urlContent = res.headers['content-type'];
+          if ("image/jpeg" === urlContent || "image/png" === urlContent) {
+            tgBot.telegram.sendPhoto(tgChannel, url);
+          }
+          if ("image/gif" === urlContent) {
+            tgBot.telegram.sendAnimation(tgChannel, url);
+          }
+        }).catch((e) => {
+          logger.error("error getting post.link headers", e);
+        });
+
+        if (url.endsWith(".gifv")) {
+          let gifUrl = url.slice(0, -1);
+          request.get(gifUrl).on('response', (res) => {
+            let gifUrlContentType = res.headers['content-type'];
+            let gifSize = res.headers['content-length'];
+            if ("image/gif" === gifUrlContentType && gifSize) {
+              tgBot.telegram.sendAnimation(tgChannel, url);
+            }
+          }).catch((e) => {
+            logger.error("gifv not converted to .gif", e);
+          });
+        }
+
+        if ('imgur.com' === urlParser.parse(url).host) {
+          //TODO: Arreglar esto
+          /*let pathParts = urlParser.parse(url).path.split('/');
+          if (pathParts.length === 2) {
+            let imgurId = pathParts[1].split('.')[0];
+            imgur.getInfo(imgurId).then((media) => {
+              if (!media.data.animated) {
+                tgBot.telegram.sendPhoto(tgChannel, url);
+              }
+            }).catch((e) => {
+              logger.error("imgur error", e);
+            });
+          }*/
+        } else if (urlParser.parse(url).host === 'gfycat.com') {
+          let rname = url.match(/gfycat.com\/(?:detail\/)?(\w*)/)[1];
+          request.get("https://api.gfycat.com/v1/gfycats/" + rname).on('response', (res) => {
+            var body = '';
+            res.on('data', (chunk) => { body += chunk; });
+            res.on('end', () => {
+              body = JSON.parse(body);
+              tgBot.telegram.sendAnimation(tgChannel, url);
+            });
+          }).catch((e) => {
+            logger.error("gfycat api error ", e);
+          });
+        }
 
       }
-      tgBot.telegram.sendMessage(tgChannel, text).then(() => {
-        console.log("Not sent....Sending to telegram");
-      });
     });
   }
   return Promise.resolve();
 }
+
+
 
 function main() {
   logger.info('Started.');
@@ -65,101 +120,3 @@ function main() {
 const sleep = ms => {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
-
-function checkDb(postId) {
-  return new Promise(function (resolve, reject) {
-    db.query("SELECT post_id FROM reddit_post_history WHERE post_id='" + postId + "';",
-      function (err, rows) {
-        if (err) {
-          log.error(err);
-        }
-        if (rows === undefined) {
-          reject(new Error("Error rows is undefined"));
-        } else {
-          resolve(rows);
-        }
-      });
-  });
-}
-
-function downloadMedia(postUrl) {
-  if (post.is_video) {
-    log.info("[video]" + postInfo);
-    if ("reddit_video" in post.media) {
-      log.info("[reddit_video] " + postInfo);
-    }
-    try {
-      if (post.crosspost_parent_list.length > 0) {
-        var parentPost = post.crosspost_parent_list[0];
-        if (parentPost.is_video && "reddit_video" in parentPost.media) {
-          log.info("[parent_reddit_video] " + postInfo);
-          return reddit.emit("video", post.title, `https://redd.it/${post.id}`, parentPost.media.reddit_video.fallback_url, sub, uniqueId, post.created);
-        }
-      }
-    } catch (e) {
-      log.error("[video] is not a crosspost: " + postInfo + " " + e)
-    }
-  }
-
-  request.get(url).on('response', (res) => {
-    let urlContent = res.headers['content-type'];
-    let fileSize = res.headers['content-length'];
-
-    if ("image/jpeg" === urlContent || "image/png" === urlContent) {
-      log.info("[reddit " + urlContent + "]" + postInfo);
-      return reddit.emit("image", post.title, `https://redd.it/${post.id}`, url, sub, uniqueId, post.created);
-    }
-  }).catch((e) => { log.error("error getting post.link headers" + e) });
-
-  if (url.endsWith(".gifv")) {
-    log.info("[.gifv] " + postInfo);
-    let mp4Url = url.slice(0, -5) + ".mp4";
-    request.get(mp4Url).on('response', (res) => {
-      let mp4UrlContentType = res.headers['content-type'];
-      let mp4Size = res.headers['content-length'];
-      if ("video/mp4" === mp4UrlContentType && mp4Size < MAX_FILE_SIZE) {
-        log.info("[.gifv converted to mp4][" + readableBytes(mp4Size) + "]: " + postInfo);
-        return reddit.emit("video", post.title, `https://redd.it/${post.id}`, mp4Url, sub, uniqueId, post.created);
-      }
-    }).catch((e) => { log.info("[.gifv not converted to mp4]" + postInfo + e) });
-    let gifUrl = url.slice(0, -1);
-    request.get(gifUrl).on('response', (res) => {
-      let gifUrlContentType = res.headers['content-type'];
-      let gifSize = res.headers['content-length'];
-      if ("image/gif" === gifUrlContentType && gifSize < MAX_FILE_SIZE) {
-        log.info("[.gifv converted to gif][" + readableBytes(gifSize) + "]: " + postInfo);
-        return reddit.emit("gif", post.title, `https://redd.it/${post.id}`, gifUrl, sub, uniqueId, post.created);
-      }
-    }).catch((e) => { log.info("[.gifv not converted to .gif]" + postInfo + e) });
-  }
-  if (urlParser.parse(url).host === 'imgur.com') {
-    log.info("[imgur media] " + postInfo);
-    let pathParts = urlParser.parse(url).path.split('/');
-    if (pathParts.length === 2) {
-      let imgurId = pathParts[1].split('.')[0];
-      imgur.getInfo(imgurId).then((media) => {
-        if (media.data.animated) {
-          log.info("[imgur animated] " + postInfo);
-          if (media.data.size.mp4_size < MAX_FILE_SIZE) {
-            return reddit.emit("video", post.title, `https://redd.it/${post.id}`, media.data.mp4, sub, uniqueId, post.created);
-          }
-        } else {
-          log.info("[imgur img] " + postInfo);
-          return reddit.emit("image", post.title, `https://redd.it/${post.id}`, media.data.link, sub, uniqueId, post.created);
-        }
-      }).catch((e) => { log.error("imgur error: " + e) });
-    } else { log.info("[imgur unwanted shit] " + postInfo); }
-  } else if (urlParser.parse(url).host === 'gfycat.com') {
-    log.info("[gfycat gif] " + postInfo);
-    let rname = url.match(/gfycat.com\/(?:detail\/)?(\w*)/)[1];
-    request.get("https://api.gfycat.com/v1/gfycats/" + rname).on('response', (res) => {
-      var body = '';
-      res.on('data', (chunk) => { body += chunk; });
-      res.on('end', () => {
-        body = JSON.parse(body);
-        return reddit.emit("gif", post.title, `https://redd.it/${post.id}`, body.gfyItem.max5mbGif, sub, uniqueId, post.created);
-      });
-    }).catch((e) => { log.error("gfycat api error " + e.statusCode) });
-  }
-}
-
