@@ -35,19 +35,26 @@ async function fetchPosts(options) {
         let postId = post.subreddit_id + post.id;
         let title = `${post.title} (${post.score} karma)`;
         logger.info(title);
+
+        let postData = {};
+        postData.title = post.title;
+        postData.subReddit = post.subreddit_name_prefixed;
+        postData.tag = subreddit;
+        postData.url = post.url;
+        postData.link = `https://redd.it/${post.id}`;
+
         let url = post.url;
         checkIfAlreadySent(postId).then((result) => {
           if (result.length === 0) {
             insertPostId(postId);
-            //TODO: Comprobar el id en bbdd y refactorizar esta lógica
             request.get(url).on('response', (res) => {
               let urlContent = res.headers['content-type'];
               if ("image/jpeg" === urlContent || "image/png" === urlContent) {
-                sendToTelegram(tgChannel, url, false);
+                sendToTelegram(tgChannel, postData, false);
               }
-              //Avoid shit made gifs
+              //Avoid huge gifs
               if ("image/gif" === urlContent && res.headers['content-length'] < 10000000) { //TODO: Check size in all request
-                sendToTelegram(tgChannel, url, true);
+                sendToTelegram(tgChannel, postData, true);
               }
             }).catch((e) => {
               logger.error("error getting post.link headers", e);
@@ -60,7 +67,7 @@ async function fetchPosts(options) {
                 let gifSize = res.headers['content-length'];
                 if ("image/gif" === gifUrlContentType && gifSize) {
                   logger.info("test")
-                  sendToTelegram(tgChannel, url, true);
+                  sendToTelegram(tgChannel, postData, true);
                 }
               }).catch((e) => {
                 logger.error("gifv not converted to .gif", e);
@@ -73,7 +80,7 @@ async function fetchPosts(options) {
                 let imgurId = pathParts[1].split('.')[0];
                 imgur.getInfo(imgurId).then((media) => {
                   if (!media.data.animated) {
-                    sendToTelegram(tgChannel, url, false);
+                    sendToTelegram(tgChannel, postData, false);
                   }
                 }).catch((e) => {
                   logger.error("imgur error", e);
@@ -87,14 +94,13 @@ async function fetchPosts(options) {
                 res.on('end', () => {
                   logger.info("gfycat");
                   body = JSON.parse(body);
-                  sendToTelegram(tgChannel, url, true);
+                  sendToTelegram(tgChannel, postData, true);
                 });
               }).catch((e) => {
                 logger.error("gfycat api error ", e);
               });
             }
           }
-
         });
       }
     });
@@ -121,49 +127,46 @@ function main() {
   }
 }
 
-const sleep = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
 
-/**
- * 
- * @param {string} tgChannel 
- * @param {string} url 
- * @param {boolean} isGif 
- */
-function sendToTelegram(tgChannel, url, isGif) {
+function sendToTelegram(tgChannel, postData, isGif) {
+  let caption = { caption: `<b>${postData.title}</b>\nvia ${postData.subReddit} #${postData.tag}\n${postData.link}\n\nby ${tgChannel}`, parse_mode: "HTML" };
   if (isGif) {
-    tgBot.telegram.sendAnimation(tgChannel, url);
+    tgBot.telegram.sendAnimation(tgChannel, postData.url, caption);
   } else {
-    tgBot.telegram.sendPhoto(tgChannel, url);
+    tgBot.telegram.sendPhoto(tgChannel, postData.url, caption);
   }
 }
+
 function checkIfAlreadySent(postId) {
   return new Promise(function (resolve, reject) {
-    db.query("SELECT post_id FROM " + dbTable + " WHERE post_id='" + postId + "';",
-      function (err, rows) {
-        if (err) {
-          logger.error(err);
-        }
-        if (rows === undefined) {
-          reject(new Error("Error rows is undefined"));
-        } else {
-          resolve(rows);
-        }
-      });
+    let sql = "SELECT post_id FROM " + dbTable + " WHERE post_id='" + postId + "';"
+    db.query(sql, function (err, rows) {
+      if (err) {
+        logger.error(err);
+      }
+      if (rows === undefined) {
+        reject(new Error("Error rows is undefined"));
+      } else {
+        resolve(rows);
+      }
+    });
   });
 }
+
 function insertPostId(postId) {
   return new Promise(function (resolve, reject) {
     let sql = "INSERT INTO " + dbTable + " (post_id) values ('" + postId + "')";
-    db.query(sql,
-      function (err, rows) {
-        if (rows === undefined) {
-          logger.error(err);
-          reject(new Error(err));
-        } else {
-          resolve(rows);
-        }
-      });
+    db.query(sql, function (err, rows) {
+      if (rows === undefined) {
+        logger.error(err);
+        reject(new Error(err));
+      } else {
+        resolve(rows);
+      }
+    });
   });
+}
+
+const sleep = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
