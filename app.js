@@ -1,6 +1,13 @@
 require('dotenv').config();
 const db = require('./db-conn');
-const logger = require('simple-node-logger').createSimpleLogger('purple.log');
+const opts = {
+  errorEventName: 'info',
+  logDirectory: './log',
+  fileNamePattern: '<DATE>.log',
+  dateFormat: 'YYYY.MM.DD',
+  timestampFormat: 'YYYY-MM-DD HH:mm:ss'
+};
+const logger = require('simple-node-logger').createRollingFileLogger(opts);
 const CronJob = require('cron').CronJob;
 const snoowrap = require('snoowrap');
 const { Telegraf } = require('telegraf');
