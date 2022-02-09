@@ -33,17 +33,16 @@ async function fetchPosts(options) {
     await sleep(5000).then(() => {
       if (post.score > minScore) {
         let postId = post.subreddit_id + post.id;
-        let title = `${post.title} (${post.score} karma)`;
-        logger.info(title);
 
         let postData = {};
         postData.title = post.title;
+        postData.karma = post.score;
         postData.subReddit = post.subreddit_name_prefixed;
         postData.tag = subreddit;
         postData.url = post.url;
         postData.link = `https://redd.it/${post.id}`;
 
-        let url = post.url;
+        let url = postData.url;
         checkIfAlreadySent(postId).then((result) => {
           if (result.length === 0) {
             insertPostId(postId);
@@ -56,25 +55,22 @@ async function fetchPosts(options) {
               if ("image/gif" === urlContent && res.headers['content-length'] < 10000000) { //TODO: Check size in all request
                 sendToTelegram(tgChannel, postData, true);
               }
-            }).catch((e) => {
-              logger.error("error getting post.link headers", e);
             });
 
             if (url.endsWith(".gifv")) {
+              logger.info("gifv");
               let gifUrl = url.slice(0, -1);
               request.get(gifUrl).on('response', (res) => {
                 let gifUrlContentType = res.headers['content-type'];
                 let gifSize = res.headers['content-length'];
                 if ("image/gif" === gifUrlContentType && gifSize) {
-                  logger.info("test")
                   sendToTelegram(tgChannel, postData, true);
                 }
-              }).catch((e) => {
-                logger.error("gifv not converted to .gif", e);
               });
             }
 
             if ('imgur.com' === urlParser.parse(url).host) {
+              log.info("imgur");
               let pathParts = urlParser.parse(url).path.split('/');
               if (pathParts.length === 2) {
                 let imgurId = pathParts[1].split('.')[0];
@@ -82,27 +78,26 @@ async function fetchPosts(options) {
                   if (!media.data.animated) {
                     sendToTelegram(tgChannel, postData, false);
                   }
-                }).catch((e) => {
-                  logger.error("imgur error", e);
                 });
               }
             } else if (urlParser.parse(url).host === 'gfycat.com') {
+              logger.info("gfycat");
               let rname = url.match(/gfycat.com\/(?:detail\/)?(\w*)/)[1];
               request.get("https://api.gfycat.com/v1/gfycats/" + rname).on('response', (res) => {
                 var body = '';
                 res.on('data', (chunk) => { body += chunk; });
+                //???
                 res.on('end', () => {
-                  logger.info("gfycat");
                   body = JSON.parse(body);
                   sendToTelegram(tgChannel, postData, true);
                 });
-              }).catch((e) => {
-                logger.error("gfycat api error ", e);
               });
             }
           }
         });
       }
+    }).catch((e) => {
+      logger.error("Error processing post", e);
     });
   }
   return Promise.resolve();
@@ -131,7 +126,12 @@ function main() {
 function sendToTelegram(tgChannel, postData, isGif) {
   let caption = { caption: `<b>${postData.title}</b>\nvia ${postData.subReddit} #${postData.tag}\n${postData.link}\n\nby ${tgChannel}`, parse_mode: "HTML" };
   if (isGif) {
-    tgBot.telegram.sendAnimation(tgChannel, postData.url, caption);
+    tgBot.telegram.sendAnimation(tgChannel, postData.url, caption)
+      .then(() => {
+        logger.info(`${postData.title} (${postData.score} karma) ${post.url} `);
+      }).catch((e) => {
+        logger.error("Error sending telegram message", e);
+      });
   } else {
     tgBot.telegram.sendPhoto(tgChannel, postData.url, caption);
   }
@@ -155,7 +155,7 @@ function checkIfAlreadySent(postId) {
 
 function insertPostId(postId) {
   return new Promise(function (resolve, reject) {
-    let sql = "INSERT INTO " + dbTable + " (post_id) values ('" + postId + "')";
+    let sql = "INSERT INTO " + dbTable + " (post_id) VALUES ('" + postId + "')";
     db.query(sql, function (err, rows) {
       if (rows === undefined) {
         logger.error(err);
@@ -168,5 +168,5 @@ function insertPostId(postId) {
 }
 
 const sleep = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
