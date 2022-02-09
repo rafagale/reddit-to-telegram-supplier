@@ -13,8 +13,8 @@ const snoowrap = require('snoowrap');
 const { Telegraf } = require('telegraf');
 const urlParser = require('url');
 const { Client } = require('@rmp135/imgur');
-const imgur = new Client(process.env.IMGUR_CLIENT_ID);
 const request = require("request-promise");
+const imgur = new Client(process.env.IMGUR_CLIENT_ID);
 const tgBot = new Telegraf(process.env.TG_BOT_TOKEN);
 const tgChannel = process.env.TG_CHANNEL;
 const totalChannels = process.env.TOTAL_CHANNELS;
@@ -37,10 +37,10 @@ async function fetchPosts(options) {
   posts = posts.sort((a, b) => b.score - a.score);
 
   for (let post of posts) {
-    await sleep(5000).then(() => {
+    await sleep(2750).then(() => {
       if (post.score > minScore) {
-        let postId = post.subreddit_id + post.id;
 
+        let postId = post.subreddit_id + post.id;
         let postData = {};
         postData.title = post.title;
         postData.karma = post.score;
@@ -52,9 +52,11 @@ async function fetchPosts(options) {
         let url = postData.url;
         checkIfAlreadySent(postId).then((result) => {
           if (result.length === 0) {
+            logger.info(`[PROCESSING] ${postData}`);
             insertPostId(postId);
             request.get(url).on('response', (res) => {
               let urlContent = res.headers['content-type'];
+              logger.info("normal pic/gif");
               if ("image/jpeg" === urlContent || "image/png" === urlContent) {
                 sendToTelegram(tgChannel, postData, false);
               }
@@ -63,7 +65,6 @@ async function fetchPosts(options) {
                 sendToTelegram(tgChannel, postData, true);
               }
             });
-
             if (url.endsWith(".gifv")) {
               logger.info("gifv");
               let gifUrl = url.slice(0, -1);
@@ -100,6 +101,8 @@ async function fetchPosts(options) {
                 });
               });
             }
+          } else {
+            logger.info(`[ALREADY SENT] ${postData}`);
           }
         });
       }
@@ -135,7 +138,7 @@ function sendToTelegram(tgChannel, postData, isGif) {
   if (isGif) {
     tgBot.telegram.sendAnimation(tgChannel, postData.url, caption)
       .then(() => {
-        logger.info(`${postData.title} (${postData.score} karma) ${post.url} `);
+        // Pass
       }).catch((e) => {
         logger.error("Error sending telegram message", e);
       });
