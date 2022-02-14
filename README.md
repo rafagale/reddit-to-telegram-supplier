@@ -1,6 +1,10 @@
 # reddit-to-telegram-supplier
  Reddit to Telegram content supplier
 
+ <p align="center">
+  <img src="https://raw.githubusercontent.com/rafagale/reddit-to-telegram-supplier/develop/logo.png?token=GHSAT0AAAAAABRQ7GLDUKE7PFXZPUMPWVJWYQKRUIA" width="300px" alt="Reddit to Telegram content supplier" />
+
+
 ## Usage
 1. Install [Node.js](https://nodejs.org/), Run `npm install`
 2. Create a "Script" at https://www.reddit.com/prefs/apps/
