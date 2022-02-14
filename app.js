@@ -102,7 +102,7 @@ async function fetchPosts(options) {
               });
             }
           } else {
-            logger.info(`[ALREADY SENT] ${postData}`);
+            //Sent
           }
         });
       }
