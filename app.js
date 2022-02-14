@@ -115,7 +115,7 @@ async function fetchPosts(options) {
 
 
 function main() {
-  logger.info('Started.');
+  logger.info('Started');
   for (let i = 0; i < totalChannels; i++) {
     let subreddit = process.env[`CHANNEL${i}_SUB`];
     let time = process.env[`CHANNEL${i}_TIME`];
