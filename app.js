@@ -19,7 +19,7 @@ const tgBot = new Telegraf(process.env.TG_BOT_TOKEN);
 const tgChannel = process.env.TG_CHANNEL;
 const totalChannels = process.env.TOTAL_CHANNELS;
 const dbTable = process.env.DB_TABLE;
-
+const maxGifSize = 10000000;
 
 const r = new snoowrap({
   userAgent: process.env.REDDIT_USER_AGENT,
@@ -52,57 +52,29 @@ async function fetchPosts(options) {
         let url = postData.url;
         checkIfAlreadySent(postId).then((result) => {
           if (result.length === 0) {
-            logger.info(`[PROCESSING] ${postData}`);
+            logger.info(`[PROCESSING] ${JSON.stringify(postData)}`);
             insertPostId(postId);
+
             request.get(url).on('response', (res) => {
               let urlContent = res.headers['content-type'];
-              logger.info("normal pic/gif");
               if ("image/jpeg" === urlContent || "image/png" === urlContent) {
                 sendToTelegram(tgChannel, postData, false);
-              }
-              //Avoid huge gifs
-              if ("image/gif" === urlContent && res.headers['content-length'] < 10000000) { //TODO: Check size in all request
+              } else if ("image/gif" === urlContent && res.headers['content-length'] < maxGifSize) {
                 sendToTelegram(tgChannel, postData, true);
               }
             });
+
             if (url.endsWith(".gifv")) {
-              logger.info("gifv");
               let gifUrl = url.slice(0, -1);
               request.get(gifUrl).on('response', (res) => {
                 let gifUrlContentType = res.headers['content-type'];
                 let gifSize = res.headers['content-length'];
-                if ("image/gif" === gifUrlContentType && gifSize) {
+                if ("image/gif" === gifUrlContentType && gifSize && gifSize < maxGifSize) {
                   sendToTelegram(tgChannel, postData, true);
                 }
               });
             }
 
-            if ('imgur.com' === urlParser.parse(url).host) {
-              log.info("imgur");
-              let pathParts = urlParser.parse(url).path.split('/');
-              if (pathParts.length === 2) {
-                let imgurId = pathParts[1].split('.')[0];
-                imgur.getInfo(imgurId).then((media) => {
-                  if (!media.data.animated) {
-                    sendToTelegram(tgChannel, postData, false);
-                  }
-                });
-              }
-            } else if (urlParser.parse(url).host === 'gfycat.com') {
-              logger.info("gfycat");
-              let rname = url.match(/gfycat.com\/(?:detail\/)?(\w*)/)[1];
-              request.get("https://api.gfycat.com/v1/gfycats/" + rname).on('response', (res) => {
-                var body = '';
-                res.on('data', (chunk) => { body += chunk; });
-                //???
-                res.on('end', () => {
-                  body = JSON.parse(body);
-                  sendToTelegram(tgChannel, postData, true);
-                });
-              });
-            }
-          } else {
-            //Sent
           }
         });
       }
@@ -137,11 +109,6 @@ function sendToTelegram(tgChannel, postData, isGif) {
   let caption = { caption: `<b>${postData.title}</b>\nvia ${postData.subReddit} #${postData.tag}\n${postData.link}\n\nby ${tgChannel}`, parse_mode: "HTML" };
   if (isGif) {
     tgBot.telegram.sendAnimation(tgChannel, postData.url, caption)
-      .then(() => {
-        // Pass
-      }).catch((e) => {
-        logger.error("Error sending telegram message", e);
-      });
   } else {
     tgBot.telegram.sendPhoto(tgChannel, postData.url, caption);
   }
