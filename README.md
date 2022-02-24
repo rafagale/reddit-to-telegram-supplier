@@ -1,7 +1,9 @@
 # reddit-to-telegram-supplier
-##<center>Reddit to Telegram content supplier</center>
+## Reddit to Telegram content supplier
 
- <p align="center">
+> Send reddit content from multiple subreddits to telegram channels
+
+<p align="center">
   <img src="https://raw.githubusercontent.com/rafagale/reddit-to-telegram-supplier/develop/logo.png?token=GHSAT0AAAAAABRQ7GLDUKE7PFXZPUMPWVJWYQKRUIA" width="300px" alt="Reddit to Telegram content supplier" />
 
 ## Installation
@@ -13,8 +15,10 @@
 6. Get your bot token at Telegram master bot aka @BotFather
 7. Enter your reddit username, password and tokens in `.env`
 8. Add channel configs in `.env` with parameters listed in [Config](#config)
-9.  Run `npm start` to start the bot   
 
+    
+## Usage
+Run `npm start` to start the bot. Ideally you may use `pm2`, `forever` or any other process manager to keep the bot alive
 
 ## Config
 Example `.env` config file:
@@ -44,7 +48,7 @@ CHANNEL0_SUB=dankmemes
 CHANNEL0_TIME=day #hour/day/week/month/year
 CHANNEL0_TYPE=Top #New/Hot/Rising/Controversial/Top
 CHANNEL0_MIN_SCORE=35000
-CHANNEL0_CRON=00 00 8-23 * * * #At minute 0 past every hour from 8 through 23.
+CHANNEL0_CRON=00 00 8-23 * * * #At minute 0 past every hour from 8 through 23
 
 CHANNEL1_SUB=memes
 CHANNEL1_TIME=day
@@ -53,6 +57,13 @@ CHANNEL1_MIN_SCORE=50000
 CHANNEL1_CRON=00 00 08 * * * #At 08:00
 
 ```
+
+## TODO List
+
+- [ ] Insert some more data in the db as currently only prevents sending duplicate posts
+- [ ] Add short videos
+- [x] Travel to Mars
+
 
 ## License
 
