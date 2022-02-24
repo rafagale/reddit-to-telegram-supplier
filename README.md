@@ -1,17 +1,18 @@
 # reddit-to-telegram-supplier
- Reddit to Telegram content supplier
+ <center>Reddit to Telegram content supplier</center>
 
  <p align="center">
   <img src="https://raw.githubusercontent.com/rafagale/reddit-to-telegram-supplier/develop/logo.png?token=GHSAT0AAAAAABRQ7GLDUKE7PFXZPUMPWVJWYQKRUIA" width="300px" alt="Reddit to Telegram content supplier" />
 
 
 ## Usage
-1. Install [Node.js](https://nodejs.org/), Run `npm install`
-2. Create a "Script" at https://www.reddit.com/prefs/apps/
-3. Get your Bot token at Telegram master bot aka @BotFather
-4. Enter your reddit username, password and tokens in `.env`
-5. Add channel configs in `.env` with parameters listed in [Config](#config)
-6. Run `npm start` to start the bot
+1. Install [Node.js](https://nodejs.org/), Run `npm install` to install all dependencies
+2. Install [MariaDB](https://mariadb.org/download/), create a database named `reddit_db ` and run the script to create reddit table. Names don't matter as long as the are the same `.env` file contains.
+3. Create a "Script" at https://www.reddit.com/prefs/apps/
+4. Get your Bot token at Telegram master bot aka @BotFather
+5. Enter your reddit username, password and tokens in `.env`
+6. Add channel configs in `.env` with parameters listed in [Config](#config)
+7. Run `npm start` to start the bot
 
 ## Config
 Example sub config file 
@@ -29,7 +30,7 @@ CHANNEL1_TIME=day
 CHANNEL1_TYPE=Top
 CHANNEL1_MIN_SCORE=50000
 CHANNEL1_CRON=00 00 08 * * * #At 08:00
-
+```
 
 ## License
 
