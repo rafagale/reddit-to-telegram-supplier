@@ -1,0 +1,37 @@
+{
+  "name": "reddit-to-telegram-supplier",
+  "version": "1.0.0",
+  "description": "Send reddit content from multiple subreddits to telegram channels",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafagale/reddit-to-telegram-supplier.git"
+  },
+  "keywords": [
+    "reddit",
+    "telegram",
+    "node",
+    "reddit2telegram",
+    "reddit-bridge",
+    "reddit-connector",
+    "telegram-bot"
+  ],
+  "author": "rafagale",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rafagale/reddit-to-telegram-supplier/issues"
+  },
+  "homepage": "https://github.com/rafagale/reddit-to-telegram-supplier#readme",
+  "dependencies": {
+    "cron": "^1.8.2",
+    "dotenv": "^16.0.0",
+    "mysql": "^2.18.1",
+    "request": "^2.88.2",
+    "simple-node-logger": "^21.8.12",
+    "snoowrap": "^1.23.0",
+    "telegraf": "^4.6.0"
+  }
+}
