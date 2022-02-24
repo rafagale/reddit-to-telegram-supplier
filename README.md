@@ -1,10 +1,9 @@
-# reddit-to-telegram-supplier
-## Reddit to Telegram content supplier
+# <center>Reddit to Telegram content supplier</center>
 
-> Send reddit content from multiple subreddits to telegram channels
+> <center>Send reddit content from multiple subreddits to telegram channels</center>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rafagale/reddit-to-telegram-supplier/develop/logo.png?token=GHSAT0AAAAAABRQ7GLDUKE7PFXZPUMPWVJWYQKRUIA" width="300px" alt="Reddit to Telegram content supplier" />
+  <img src="https://raw.githubusercontent.com/rafagale/reddit-to-telegram-supplier/master/logo.png" width="400px" alt="Reddit to Telegram content supplier" />
 
 ## Installation
 1. Install [Node.js](https://nodejs.org/) 
