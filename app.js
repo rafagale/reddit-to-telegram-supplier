@@ -35,7 +35,7 @@ async function fetchPosts(options) {
 
   for (let post of posts) {
     await sleep(2750).then(() => {
-      if (post.score > minScore) {
+      if (post.score > minScore && !isUnfunny(post.title)) {
 
         let postId = post.subreddit_id + post.id;
         let postData = {};
@@ -143,4 +143,11 @@ function insertPostId(postId) {
 
 const sleep = ms => {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isUnfunny(title) {
+  return title.toLowerCase().includes('ukraine') || title.toLowerCase().includes('russia')
+    || title.toLowerCase().includes('putin') || title.toLowerCase().includes('zelensky')
+    || title.toLowerCase().includes('rusia') || title.toLowerCase().includes('kyiv')
+    || title.toLowerCase().includes('🇺🇦') || title.toLowerCase().includes('🇷🇺');
 }
