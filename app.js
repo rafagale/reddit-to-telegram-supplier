@@ -147,7 +147,10 @@ const sleep = ms => {
 
 function isUnfunny(title) {
   return title.toLowerCase().includes('ukraine') || title.toLowerCase().includes('russia')
-    || title.toLowerCase().includes('putin') || title.toLowerCase().includes('zelensky')
-    || title.toLowerCase().includes('rusia') || title.toLowerCase().includes('kyiv')
-    || title.toLowerCase().includes('🇺🇦') || title.toLowerCase().includes('🇷🇺');
+    || title.toLowerCase().includes('putin') || title.toLowerCase().includes('nato')
+    || title.toLowerCase().includes('zelensky') || title.toLowerCase().includes('rusia')
+    || title.toLowerCase().includes('kyiv') || title.toLowerCase().includes('💙💛')
+    || title.toLowerCase().includes('kiev') || title.toLowerCase().includes('ukraini')
+    || title.toLowerCase().includes('🇺🇦') || title.toLowerCase().includes('🇷🇺')
+    || title.toLowerCase().includes('🔵🟡') || title.toLowerCase().includes('🟦🟨');
 }
